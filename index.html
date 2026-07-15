@@ -340,8 +340,17 @@ const SUPABASE_URL = "https://ybmodtyblmvxhhlitxea.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlibW9kdHlibG12eGhobGl0eGVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjk4NjcsImV4cCI6MjA5OTcwNTg2N30.Tb2lz_OoNQvDyr3ZhoBxgvYd-gNWqQeaZaJf8bVa3TU";
 
 let supabase = null;
-if (SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY") {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+try {
+  if (SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY") {
+    if (window.supabase && typeof window.supabase.createClient === "function") {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else {
+      console.warn("Supabase library did not load — falling back to local-only pins.");
+    }
+  }
+} catch (err) {
+  console.error("Supabase init failed, falling back to local-only pins:", err);
+  supabase = null;
 }
 
 /* =====================================================================
