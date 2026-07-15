@@ -172,9 +172,12 @@
   #landmarks-g{ opacity:0; transition: opacity 0.25s ease; }
   #map-viewport.t2 #landmarks-g{ opacity:1; }
 
-  .elevation-tint{ fill: var(--terrain); opacity:0.16; pointer-events:none; }
+  .elevation-tint{ fill: url(#reliefShade); pointer-events:none; }
 
-  .mountain-icon{ fill: var(--terrain); stroke: var(--card); stroke-width:0.4; }
+  .mountain-shadow{ fill: var(--ink-deep); opacity:0.16; }
+  .mountain-face-light{ fill: #b99a6c; stroke: var(--ink-deep); stroke-width:0.25; }
+  .mountain-face-dark{ fill: #6b4a2f; stroke: var(--ink-deep); stroke-width:0.25; }
+  .mountain-snowcap{ fill: var(--card); opacity:0.92; }
   .mountain-label{
     font-family: var(--font-body);
     font-weight:700; font-style:italic;
@@ -331,6 +334,11 @@
           <stop offset="0%" stop-color="#8fe0d8"/>
           <stop offset="55%" stop-color="var(--ocean-1)"/>
           <stop offset="100%" stop-color="var(--ocean-2)"/>
+        </radialGradient>
+        <radialGradient id="reliefShade" cx="32%" cy="28%" r="75%">
+          <stop offset="0%" stop-color="#c9a877" stop-opacity="0.55"/>
+          <stop offset="55%" stop-color="#8a6a3f" stop-opacity="0.32"/>
+          <stop offset="100%" stop-color="#5c4326" stop-opacity="0.1"/>
         </radialGradient>
       </defs>
       <path id="globe-sphere" fill="url(#globeShade)"></path>
@@ -507,6 +515,36 @@ function placeGroup(list){
   });
 }
 
+/* =====================================================================
+   Label decluttering — when labels would overlap, the lower-priority
+   one hides its TEXT (not its dot/icon) so the data point still shows,
+   just without a name until there's room. Recomputed every redraw().
+===================================================================== */
+const declutterItems = [];
+function regLabel(textEl, lon, lat, dx, dy, priority, tierGate, text, fontSize){
+  const halfW = 0.5 * text.length * fontSize * 0.56;
+  const halfH = 0.5 * fontSize * 1.15;
+  declutterItems.push({ textEl, lon, lat, dx, dy, halfW, halfH, priority, tierGate });
+}
+function declutter(tier){
+  const vw = viewport.clientWidth, vh = viewport.clientHeight, margin = 40;
+  const boxes = [];
+  for (const item of declutterItems){
+    if (tier < item.tierGate || !isVisible(item.lon, item.lat)) { item.textEl.style.display = 'none'; continue; }
+    const [x, y] = projection([item.lon, item.lat]);
+    if (x < -margin || x > vw+margin || y < -margin || y > vh+margin) { item.textEl.style.display = 'none'; continue; }
+    const cx = x + item.dx, cy = y + item.dy;
+    const b = { x0: cx-item.halfW, y0: cy-item.halfH, x1: cx+item.halfW, y1: cy+item.halfH };
+    let hit = false;
+    for (let i=0; i<boxes.length; i++){
+      const o = boxes[i];
+      if (b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0) { hit = true; break; }
+    }
+    if (hit) { item.textEl.style.display = 'none'; }
+    else { item.textEl.style.display = ''; boxes.push(b); }
+  }
+}
+
 function redraw(){
   projection.rotate(rotation).scale(baseScale * zoomFactor);
   spherePathEl.setAttribute('d', pathGen({type:'Sphere'}));
@@ -531,6 +569,7 @@ function redraw(){
   placeGroup(cityEls3);
   placeGroup(landmarkEls);
   placeGroup(mountainEls);
+  declutter(tier);
   renderPins();
 }
 
@@ -556,10 +595,11 @@ const countryLabelEls = COUNTRY_LABELS.map(c=>{
   t.textContent = c.n;
   g.appendChild(t);
   countryLabelsG.appendChild(g);
+  regLabel(t, c.lon, c.lat, 0, 0, 0, 2, c.n, 11.5);
   return { g, lon:c.lon, lat:c.lat };
 });
 
-function buildCityTier(list, groupEl, dotR, fontSize){
+function buildCityTier(list, groupEl, dotR, fontSize, priority, tierGate){
   return list.map(c=>{
     const g = document.createElementNS(svgNS,'g');
     const dot = document.createElementNS(svgNS,'circle');
@@ -567,19 +607,22 @@ function buildCityTier(list, groupEl, dotR, fontSize){
     dot.setAttribute('class','city-dot');
     g.appendChild(dot);
     const t = document.createElementNS(svgNS,'text');
-    t.setAttribute('x', dotR + 1.6);
+    const localX = dotR + 1.6;
+    t.setAttribute('x', localX);
     t.setAttribute('y', fontSize * 0.32);
     t.setAttribute('font-size', fontSize);
     t.setAttribute('class','city-label');
     t.textContent = c.n;
     g.appendChild(t);
     groupEl.appendChild(g);
+    const halfW = 0.5 * c.n.length * fontSize * 0.56;
+    regLabel(t, c.lon, c.lat, localX + halfW, 0, priority, tierGate, c.n, fontSize);
     return { g, lon:c.lon, lat:c.lat };
   });
 }
-const cityEls1 = buildCityTier(CITY_TIER1, cityTier1G, 3.2, 12.5);
-const cityEls2 = buildCityTier(CITY_TIER2, cityTier2G, 1.7, 8);
-const cityEls3 = buildCityTier(CITY_TIER3, cityTier3G, 1.2, 6);
+const cityEls1 = buildCityTier(CITY_TIER1, cityTier1G, 3.2, 12.5, 3, 1);
+const cityEls2 = buildCityTier(CITY_TIER2, cityTier2G, 1.7, 8, 4, 2);
+const cityEls3 = buildCityTier(CITY_TIER3, cityTier3G, 1.2, 6, 5, 3);
 
 function buildLandmarks(list, groupEl){
   return list.map(c=>{
@@ -597,6 +640,8 @@ function buildLandmarks(list, groupEl){
     t.textContent = c.n;
     g.appendChild(t);
     groupEl.appendChild(g);
+    const halfW = 0.5 * c.n.length * 8 * 0.56;
+    regLabel(t, c.lon, c.lat, 5.2 + halfW, 0, 1, 2, c.n, 8);
     return { g, lon:c.lon, lat:c.lat };
   });
 }
@@ -607,10 +652,11 @@ function buildMountains(ranges, groupEl){
   ranges.forEach(range=>{
     range.pts.forEach((pt, i)=>{
       const g = document.createElementNS(svgNS,'g');
-      const icon = document.createElementNS(svgNS,'path');
-      icon.setAttribute('d', 'M0,-3.2 L2.6,2.4 L0.8,2.4 L0,0.6 L-0.8,2.4 L-2.6,2.4 Z');
-      icon.setAttribute('class','mountain-icon');
-      g.appendChild(icon);
+      g.innerHTML = `
+        <ellipse class="mountain-shadow" cx="0" cy="3.7" rx="3.4" ry="0.9"/>
+        <path class="mountain-face-dark" d="M0,-4.8 L0,3.4 L3.7,3.4 Z"/>
+        <path class="mountain-face-light" d="M0,-4.8 L0,3.4 L-3.7,3.4 Z"/>
+        <path class="mountain-snowcap" d="M0,-4.8 L1.2,-2.35 L-1.2,-2.35 Z"/>`;
       groupEl.appendChild(g);
       out.push({ g, lon:pt[0], lat:pt[1] });
     });
@@ -624,11 +670,14 @@ function buildMountains(ranges, groupEl){
     t.textContent = range.n;
     lg.appendChild(t);
     groupEl.appendChild(lg);
+    const halfW = 0.5 * range.n.length * 8.5 * 0.56;
+    regLabel(t, mid[0], mid[1], 0, -6, 2, 2, range.n, 8.5);
     out.push({ g: lg, lon:mid[0], lat:mid[1] });
   });
   return out;
 }
 const mountainEls = buildMountains(MOUNTAIN_RANGES, mountainsG);
+declutterItems.sort((a,b)=>a.priority-b.priority);
 
 /* =====================================================================
    Rotate (drag), zoom (wheel/buttons), click-to-pin
