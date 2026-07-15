@@ -330,7 +330,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabaseClient/supabaseClient-js@2"></script>
 <script>
 /* =====================================================================
    CONFIG — fill these in with your own Supabase project details.
@@ -339,18 +339,18 @@
 const SUPABASE_URL = "https://ybmodtyblmvxhhlitxea.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlibW9kdHlibG12eGhobGl0eGVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjk4NjcsImV4cCI6MjA5OTcwNTg2N30.Tb2lz_OoNQvDyr3ZhoBxgvYd-gNWqQeaZaJf8bVa3TU";
 
-let supabase = null;
+let supabaseClient = null;
 try {
   if (SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY") {
     if (window.supabase && typeof window.supabase.createClient === "function") {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
-      console.warn("Supabase library did not load — falling back to local-only pins.");
+      console.warn("Supabase library did not load — falling back to local-only pins. Check your network/ad-blocker, or that the CDN script tag loaded.");
     }
   }
 } catch (err) {
   console.error("Supabase init failed, falling back to local-only pins:", err);
-  supabase = null;
+  supabaseClient = null;
 }
 
 /* =====================================================================
@@ -558,33 +558,33 @@ showToggle.addEventListener('click', ()=>{
 let allPins = [];
 
 async function loadPins(){
-  if(!supabase){ allPins = JSON.parse(localStorage.getItem('travelmap_local_pins')||"[]"); renderPins(); return; }
-  const { data, error } = await supabase.from('pins').select('*').order('created_at', { ascending:true });
+  if(!supabaseClient){ allPins = JSON.parse(localStorage.getItem('travelmap_local_pins')||"[]"); renderPins(); return; }
+  const { data, error } = await supabaseClient.from('pins').select('*').order('created_at', { ascending:true });
   if(error){ console.error(error); return; }
   allPins = data || [];
   renderPins();
 }
 async function savePin(pin){
-  if(!supabase){
+  if(!supabaseClient){
     pin.id = 'local-'+Date.now();
     allPins.push(pin);
     localStorage.setItem('travelmap_local_pins', JSON.stringify(allPins));
     renderPins();
     return;
   }
-  const { data, error } = await supabase.from('pins').insert(pin).select();
+  const { data, error } = await supabaseClient.from('pins').insert(pin).select();
   if(error){ alert('Could not save pin: '+error.message); return; }
   allPins.push(data[0]);
   renderPins();
 }
 async function deletePin(id){
-  if(!supabase){
+  if(!supabaseClient){
     allPins = allPins.filter(p=>p.id!==id);
     localStorage.setItem('travelmap_local_pins', JSON.stringify(allPins));
     renderPins();
     return;
   }
-  const { error } = await supabase.from('pins').delete().eq('id', id);
+  const { error } = await supabaseClient.from('pins').delete().eq('id', id);
   if(error){ alert('Could not delete pin: '+error.message); return; }
   allPins = allPins.filter(p=>p.id!==id);
   renderPins();
