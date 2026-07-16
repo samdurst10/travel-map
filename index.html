@@ -69,8 +69,13 @@
   /* Title cartouche                                                   */
   /* ---------------------------------------------------------------- */
   #cartouche{
-    position:absolute; top:26px; left:50%; transform:translateX(-50%);
+    position:absolute; top:26px; left:50%; transform:translateX(-50%) scale(1);
     z-index:5; text-align:center; pointer-events:none;
+    transition: left 0.4s ease, transform 0.4s ease, text-align 0.4s ease;
+  }
+  #cartouche.shifted{
+    left:26px; transform:translateX(0) scale(0.72);
+    text-align:left; transform-origin: top left;
   }
   #cartouche h1{
     margin:0; font-family:var(--font-display); font-weight:400;
@@ -86,6 +91,7 @@
   #cartouche .rule{
     width:130px; height:4px; background:var(--gold); margin:6px auto 0; border-radius:2px;
   }
+  #cartouche.shifted .rule{ margin:6px 0 0; }
 
   /* ---------------------------------------------------------------- */
   /* Globe viewport                                                     */
@@ -680,6 +686,7 @@ const CONTINENT_LABELS = [
    reprojected live on every rotate/zoom so it's always vector-crisp.
 ===================================================================== */
 const viewport = document.getElementById('map-viewport');
+const cartoucheEl = document.getElementById('cartouche');
 const svg = document.getElementById('worldsvg');
 const spherePathEl = document.getElementById('globe-sphere');
 const graticulePathEl = document.getElementById('graticule-path');
@@ -709,7 +716,7 @@ const projection = d3.geoOrthographic().clipAngle(90).precision(0.3);
 const pathGen = d3.geoPath(projection);
 const graticule = d3.geoGraticule();
 
-let rotation = [-15, -22];
+let rotation = [90, -20]; // centers view on the Americas (~lon -90, lat 20)
 let zoomFactor = 1;
 const MIN_ZOOM = 0.42;
 const MAX_ZOOM = 26;
@@ -803,6 +810,7 @@ function redraw(){
   graticulePathEl.setAttribute('d', pathGen(graticule()) || '');
 
   const tier = updateZoomTier();
+  cartoucheEl.classList.toggle('shifted', tier >= 2);
   const useHigh = tier >= 3;
   layerLowG.style.display = useHigh ? 'none' : 'block';
   layerHighG.style.display = useHigh ? 'block' : 'none';
@@ -1219,7 +1227,7 @@ viewport.addEventListener('wheel', (e)=>{
 
 document.getElementById('zoomin').onclick = ()=>{ zoomFactor = Math.min(MAX_ZOOM, zoomFactor*1.4); redraw(); };
 document.getElementById('zoomout').onclick = ()=>{ zoomFactor = Math.max(MIN_ZOOM, zoomFactor/1.4); redraw(); };
-document.getElementById('zoomreset').onclick = ()=>{ zoomFactor = 1; rotation = [-15,-22]; redraw(); };
+document.getElementById('zoomreset').onclick = ()=>{ zoomFactor = 1; rotation = [90,-20]; redraw(); };
 
 /* touch support (basic) */
 let lastTouchDist = null;
@@ -1290,7 +1298,7 @@ travInput.addEventListener('input', ()=>{
 });
 const showToggle = document.getElementById('showtoggle');
 const showLabel = document.getElementById('showtoggle-label');
-let showMineOnly = localStorage.getItem('travelmap_mineonly') === '1';
+let showMineOnly = localStorage.getItem('travelmap_mineonly') !== '0';
 function syncToggleUI(){
   showToggle.classList.toggle('on', showMineOnly);
   showLabel.textContent = showMineOnly ? "Showing: mine only" : "Showing: everyone";
