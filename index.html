@@ -541,9 +541,17 @@
 
   @media (max-width:640px){
     #cartouche h1{ font-size:16px; }
-    #controls{ top:auto; bottom:70px; right:14px; }
+    #controls{ top:auto; bottom:70px; right:10px; gap:6px; max-width:58vw; }
     #hint{ display:none; }
+    .panel{ padding:7px 9px; }
     .panel input[type=text]{ width:110px; }
+    .toggle-row{ margin-top:6px; gap:6px; }
+    .toggle-row span{ font-size:10px; }
+    .switch{ width:32px; height:17px; }
+    .switch .knob{ width:11px; height:11px; }
+    .switch.on .knob{ left:17px; }
+    .panel-body{ max-height:320px; }
+    .stats-line{ font-size:11px; }
     #page-footer{ font-size:8px; right:8px; bottom:4px; }
   }
 </style>
@@ -603,7 +611,7 @@
   <div id="controls">
     <div class="panel">
       <label for="travname">Traveler name</label>
-      <input type="text" id="travname" placeholder="e.g. Caro" maxlength="24">
+      <input type="text" id="travname" placeholder="e.g. Sam" maxlength="24">
       <div class="toggle-row">
         <div class="switch" id="showtoggle"><div class="knob"></div></div>
         <span id="showtoggle-label">Showing: everyone</span>
@@ -1512,6 +1520,12 @@ document.querySelectorAll('.panel-header').forEach(header=>{
     header.closest('.panel').classList.toggle('collapsed');
   });
 });
+// On small screens, start these folded — expanded, they'd stack taller
+// than the phone's viewport and bury the globe entirely.
+if (window.innerWidth <= 640){
+  document.getElementById('layer-toggles').classList.add('collapsed');
+  document.getElementById('stats-panel').classList.add('collapsed');
+}
 
 
 /* =====================================================================
