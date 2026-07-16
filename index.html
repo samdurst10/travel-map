@@ -476,7 +476,7 @@
     margin-left:8px;
   }
   .panel-body{
-    overflow:hidden; max-height:220px; opacity:1;
+    overflow:hidden; max-height:260px; opacity:1;
     transition: max-height 0.3s ease, opacity 0.25s ease;
   }
   .panel.collapsed .panel-body{ max-height:0; opacity:0; }
@@ -602,7 +602,7 @@
   <div id="controls">
     <div class="panel">
       <label for="travname">Traveler name</label>
-      <input type="text" id="travname" placeholder="e.g. Caro" maxlength="24">
+      <input type="text" id="travname" placeholder="e.g. Caro :)" maxlength="24">
       <div class="toggle-row">
         <div class="switch" id="showtoggle"><div class="knob"></div></div>
         <span id="showtoggle-label">Showing: everyone</span>
@@ -642,6 +642,10 @@
         <div class="toggle-row">
           <div class="switch on" id="toggle-daynight"><div class="knob"></div></div>
           <span>Day / night</span>
+        </div>
+        <div class="toggle-row">
+          <div class="switch on" id="toggle-routes"><div class="knob"></div></div>
+          <span>Pin connector</span>
         </div>
       </div>
     </div>
@@ -832,7 +836,7 @@ function fitProjection(){
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   baseScale = Math.min(w, h) / 2 * 0.8;
   projection.translate([w/2, h/2]);
-  viewportSizeFactor = Math.max(0.5, Math.min(1.6, Math.min(w, h) / REFERENCE_VIEWPORT_DIM));
+  viewportSizeFactor = Math.max(0.24, Math.min(1.6, Math.min(w, h) / REFERENCE_VIEWPORT_DIM));
 }
 
 function updateZoomTier(){
@@ -1482,14 +1486,15 @@ const layerGroups = {
   cities: [cityTier1G, cityTier2G, cityTier3G],
   reflines: [reflinesG],
   daynight: [nightPathEl],
+  routes: [routesG],
 };
-const layerState = { geology: true, roads: true, parks: true, cities: true, reflines: true, daynight: true };
+const layerState = { geology: true, roads: true, parks: true, cities: true, reflines: true, daynight: true, routes: true };
 function applyLayerToggle(key){
   const on = layerState[key];
   layerGroups[key].forEach(g=>{ g.style.display = on ? '' : 'none'; });
 }
 Object.keys(layerGroups).forEach(applyLayerToggle);
-['geology','roads','parks','cities','reflines','daynight'].forEach(key=>{
+['geology','roads','parks','cities','reflines','daynight','routes'].forEach(key=>{
   const el = document.getElementById('toggle-'+key);
   el.addEventListener('click', ()=>{
     layerState[key] = !layerState[key];
