@@ -534,6 +534,7 @@
     pointer-events:none;
     user-select:none;
     white-space:nowrap;
+    text-transform: lowercase;
   }
   #page-footer .footer-dot{ margin:0 6px; }
 
@@ -818,11 +819,20 @@ function isVisible(lon, lat){
   return d3.geoDistance([lon, lat], center) < 1.5; // ~86° — a hair inside the true horizon
 }
 
+/* Markers/icons were sized in fixed pixels against a normal browser-tab-sized
+   viewport. Embedded small (e.g. a narrow Notion block), the globe itself
+   shrinks to fit but fixed-pixel icons don't — so this tracks how the actual
+   container size compares to that reference and scales everything down (or
+   up) to match, keeping icon-to-globe proportions correct at any embed size. */
+const REFERENCE_VIEWPORT_DIM = 700;
+let viewportSizeFactor = 1;
+
 function fitProjection(){
   const w = viewport.clientWidth, h = viewport.clientHeight;
   svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   baseScale = Math.min(w, h) / 2 * 0.8;
   projection.translate([w/2, h/2]);
+  viewportSizeFactor = Math.max(0.5, Math.min(1.6, Math.min(w, h) / REFERENCE_VIEWPORT_DIM));
 }
 
 function updateZoomTier(){
@@ -846,9 +856,11 @@ function placeGroup(list, scale){
 }
 /* How much markers/labels grow as you zoom in — keeps small-tier detail
    (city dots, mountain icons, etc.) legible at max zoom instead of staying
-   pinned to a fixed screen-pixel size regardless of zoom level. */
+   pinned to a fixed screen-pixel size regardless of zoom level. Also folds
+   in viewportSizeFactor so embed size doesn't throw off icon proportions. */
 function markerScale(){
-  return 1 + Math.min(1, Math.max(0, zoomFactor - 1) / (MAX_ZOOM - 1)) * 1.6;
+  const zoomBoost = 1 + Math.min(1, Math.max(0, zoomFactor - 1) / (MAX_ZOOM - 1)) * 1.6;
+  return zoomBoost * viewportSizeFactor;
 }
 
 /* =====================================================================
@@ -1547,7 +1559,7 @@ function renderPins(){
     const mine = (p.traveler||"").trim().toLowerCase() === me && me.length>0;
     const gPos = document.createElementNS(svgNS,'g');
     gPos.setAttribute('class', 'pin-pos ' + (mine ? 'mine' : 'other'));
-    gPos.setAttribute('transform', `translate(${x},${y})`);
+    gPos.setAttribute('transform', `translate(${x},${y}) scale(${viewportSizeFactor})`);
     const gVisual = document.createElementNS(svgNS,'g');
     gVisual.setAttribute('class','pin-visual');
     gVisual.innerHTML = `<path class="seal" d="M0,-19 C-5,-19 -9,-15 -9,-10 C-9,-4 0,6 0,6 C0,6 9,-4 9,-10 C9,-15 5,-19 0,-19 Z"/><circle cx="0" cy="-10.5" r="3.2" fill="var(--card)"/>`;
