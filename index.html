@@ -344,11 +344,14 @@
   .country-c5{ fill: #c9a9d9; }
   .country-c6{ fill: #d9c07a; }
   .country-c7{ fill: #a3c9c4; }
+  .country-usa{ fill: #e2a83f; }
 
   .mountain-shadow{ fill: var(--ink-deep); opacity:0.16; }
   .mountain-face-light{ fill: #b99a6c; stroke: var(--ink-deep); stroke-width:0.25; }
   .mountain-face-dark{ fill: #6b4a2f; stroke: var(--ink-deep); stroke-width:0.25; }
   .mountain-snowcap{ fill: var(--card); opacity:0.92; }
+  #mountains-g{ opacity:0; transition: opacity 0.25s ease; }
+  #map-viewport.t2 #mountains-g{ opacity:1; }
   .mountain-label{
     font-family: var(--font-body);
     font-weight:700; font-style:italic;
@@ -792,14 +795,17 @@ const graticule = d3.geoGraticule();
 let rotation = [90, -20]; // centers view on the Americas (~lon -90, lat 20)
 let zoomFactor = 1;
 const MIN_ZOOM = 0.42;
-const MAX_ZOOM = 26;
+const MAX_ZOOM = 55;
 let baseScale = 200;
 
 function buildCountryPaths(geo, groupEl){
   return geo.features.map(feature=>{
     const p = document.createElementNS(svgNS,'path');
-    const idx = colorIndexForName((feature.properties && feature.properties.name) || '');
-    p.setAttribute('class', 'country country-c' + idx);
+    const name = (feature.properties && feature.properties.name) || '';
+    const idx = colorIndexForName(name);
+    let cls = 'country country-c' + idx;
+    if (name === 'United States of America') cls += ' country-usa';
+    p.setAttribute('class', cls);
     groupEl.appendChild(p);
     return { p, feature };
   });
@@ -842,7 +848,7 @@ function placeGroup(list, scale){
    (city dots, mountain icons, etc.) legible at max zoom instead of staying
    pinned to a fixed screen-pixel size regardless of zoom level. */
 function markerScale(){
-  return 1 + Math.min(1, Math.max(0, zoomFactor - 1) / 8) * 1.1;
+  return 1 + Math.min(1, Math.max(0, zoomFactor - 1) / (MAX_ZOOM - 1)) * 1.6;
 }
 
 /* =====================================================================
