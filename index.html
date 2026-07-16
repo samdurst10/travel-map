@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>My Travels — World Map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -381,7 +381,7 @@
   /* Journal card (popup)                                              */
   /* ---------------------------------------------------------------- */
   #journal{
-    position:absolute; z-index:50; width:250px;
+    position:absolute; z-index:50; width:min(250px, 86vw);
     background: var(--card);
     border:3px solid var(--ink-deep);
     border-radius: 10px;
@@ -413,16 +413,16 @@
   }
   #journal label{ display:block; font-size:11px; font-weight:600; color:var(--ink); margin:8px 0 2px; letter-spacing:0.03em; text-transform:uppercase; }
   #journal input, #journal textarea{
-    width:100%; font-family: var(--font-mono); font-size:12.5px;
+    width:100%; font-family: var(--font-mono); font-size:16px;
     background: #fff;
     border:2px solid var(--ink); border-radius:5px; color:var(--ink-deep);
-    padding:5px 6px;
+    padding:7px 8px;
   }
   #journal textarea{ resize:vertical; min-height:44px; }
   #journal .row{ display:flex; gap:8px; margin-top:12px; }
   #journal button{
-    font-family:var(--font-body); font-weight:700; font-size:12px; letter-spacing:0.02em;
-    padding:7px 10px; border:2px solid var(--ink-deep); border-radius:7px; background:var(--paper);
+    font-family:var(--font-body); font-weight:700; font-size:13px; letter-spacing:0.02em;
+    padding:9px 10px; border:2px solid var(--ink-deep); border-radius:7px; background:var(--paper);
     color:var(--ink-deep); cursor:pointer; flex:1;
   }
   #journal button.primary{ background:var(--red); color:#fff; border-color:var(--red-deep); }
@@ -451,7 +451,7 @@
   }
   .panel label{ display:block; font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--ink); margin-bottom:3px; text-transform:uppercase; }
   .panel input[type=text]{
-    font-family:var(--font-mono); font-size:12px; border:2px solid var(--ink); border-radius:5px;
+    font-family:var(--font-mono); font-size:16px; border:2px solid var(--ink); border-radius:5px;
     background:#fff; padding:4px 6px; width:150px; color:var(--ink-deep);
   }
   .toggle-row{ display:flex; align-items:center; gap:8px; margin-top:8px; }
@@ -1620,12 +1620,12 @@ const journalBody = document.getElementById('journal-body');
 document.getElementById('journal-close').onclick = closeJournal;
 function positionJournal(clientX, clientY){
   const pageRect = document.getElementById('page').getBoundingClientRect();
-  const boxW = 250;
+  const boxW = journal.offsetWidth || Math.min(250, pageRect.width * 0.86);
   const clickX = clientX - pageRect.left;
   const clickY = clientY - pageRect.top;
 
   let left = clickX - 20;
-  left = Math.max(10, Math.min(left, pageRect.width - boxW - 20));
+  left = Math.max(10, Math.min(left, pageRect.width - boxW - 10));
 
   // prefer placing the card above the click point; flip below if there's no room
   const approxBoxH = journal.offsetHeight || 210;
