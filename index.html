@@ -71,10 +71,10 @@
   #cartouche{
     position:absolute; top:26px; left:50%; transform:translateX(-50%) scale(1);
     z-index:5; text-align:center; pointer-events:none;
-    transition: left 0.4s ease, transform 0.4s ease, text-align 0.4s ease;
+    transition: top 0.4s ease, left 0.4s ease, transform 0.4s ease, text-align 0.4s ease;
   }
   #cartouche.shifted{
-    left:26px; transform:translateX(0) scale(0.72);
+    top:8px; left:12px; transform:translateX(0) scale(0.72);
     text-align:left; transform-origin: top left;
   }
   #cartouche h1{
@@ -97,7 +97,7 @@
   /* Globe viewport                                                     */
   /* ---------------------------------------------------------------- */
   #map-viewport{
-    position:absolute; inset:34px;
+    position:absolute; top:72px; left:34px; right:34px; bottom:26px;
     overflow:hidden;
     cursor: grab;
     background: var(--paper); /* the "page" the globe sits on */
@@ -108,6 +108,21 @@
 
   #globe-sphere{ stroke: var(--ink-deep); stroke-width:2; }
   .graticule{ stroke: var(--ink); stroke-width:0.5; opacity:0.28; fill:none; }
+
+  .refline-equator{ fill:none; stroke: var(--red); stroke-width:1.3; opacity:0.55; }
+  .refline-tropic{ fill:none; stroke:#b8860b; stroke-width:0.9; stroke-dasharray:4,3; opacity:0.55; }
+  .refline-polar{ fill:none; stroke: var(--ocean-2); stroke-width:0.9; stroke-dasharray:4,3; opacity:0.55; }
+  .refline-meridian{ fill:none; stroke: var(--ink-deep); stroke-width:0.9; stroke-dasharray:1,3; opacity:0.5; }
+  .refline-label{
+    font-family: var(--font-mono); font-size:7.5px;
+    fill: var(--ink); opacity:0.75;
+    text-anchor:middle; pointer-events:none; user-select:none;
+    paint-order: stroke fill; stroke: var(--card); stroke-width:2px;
+  }
+
+  .night-shade{ fill: #0a1626; opacity:0.36; pointer-events:none; }
+
+  .route-line{ fill:none; stroke: var(--red); stroke-width:1; stroke-dasharray:1,3.5; opacity:0.7; stroke-linecap:round; }
   .state-outline{
     fill:none; stroke: var(--ink); stroke-width:0.6;
     stroke-dasharray: 3,2.4; opacity:0; pointer-events:none;
@@ -443,6 +458,29 @@
   }
   .switch.on .knob{ left:19px; background:var(--red); }
 
+  .panel-header{
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; user-select:none;
+  }
+  .panel-header label{ margin-bottom:0; cursor:pointer; }
+  .collapse-arrow{
+    font-size:11px; color:var(--ink); transition: transform 0.25s ease;
+    margin-left:8px;
+  }
+  .panel-body{
+    overflow:hidden; max-height:220px; opacity:1;
+    transition: max-height 0.3s ease, opacity 0.25s ease;
+  }
+  .panel.collapsed .panel-body{ max-height:0; opacity:0; }
+  .panel.collapsed .collapse-arrow{ transform: rotate(-90deg); }
+
+  .stats-line{
+    font-family:var(--font-mono); font-size:12px; color:var(--ink-deep);
+    margin-top:6px;
+  }
+  .stats-line span{ font-weight:700; color:var(--red); }
+  .stats-pct-line span{ color:var(--frame-green-dk); }
+
   #zoomctl{ display:flex; gap:5px; }
   #zoomctl button{
     width:30px; height:30px; border-radius:8px; font-family:var(--font-body); font-weight:800; font-size:16px;
@@ -525,6 +563,7 @@
       </defs>
       <path id="globe-sphere" fill="url(#globeShade)"></path>
       <path id="graticule-path" class="graticule"></path>
+      <g id="reflines-g"></g>
       <g id="ocean-labels-g"></g>
       <g id="layer-low-g"></g>
       <g id="layer-high-g" style="display:none"></g>
@@ -545,6 +584,8 @@
       <g id="mountains-g"></g>
       <g id="state-labels-g"></g>
       <g id="city-tier1-g"></g>
+      <path id="night-path" class="night-shade"></path>
+      <g id="routes-g"></g>
       <g id="pins-g"></g>
     </svg>
   </div>
@@ -558,29 +599,52 @@
         <span id="showtoggle-label">Showing: everyone</span>
       </div>
     </div>
-    <div class="panel" id="layer-toggles">
-      <label>Map layers</label>
-      <div class="toggle-row">
-        <div class="switch on" id="toggle-geology"><div class="knob"></div></div>
-        <span>Geology</span>
-      </div>
-      <div class="toggle-row">
-        <div class="switch on" id="toggle-roads"><div class="knob"></div></div>
-        <span>Roads (US)</span>
-      </div>
-      <div class="toggle-row">
-        <div class="switch on" id="toggle-parks"><div class="knob"></div></div>
-        <span>Parks</span>
-      </div>
-      <div class="toggle-row">
-        <div class="switch on" id="toggle-cities"><div class="knob"></div></div>
-        <span>Cities</span>
-      </div>
-    </div>
     <div id="zoomctl" class="panel">
       <button id="zoomout" title="Zoom out">–</button>
       <button id="zoomreset" title="Reset">⟲</button>
       <button id="zoomin" title="Zoom in">+</button>
+    </div>
+    <div class="panel collapsible" id="layer-toggles">
+      <div class="panel-header" data-target="layer-body">
+        <label>Map layers</label>
+        <span class="collapse-arrow">▾</span>
+      </div>
+      <div class="panel-body" id="layer-body">
+        <div class="toggle-row">
+          <div class="switch on" id="toggle-geology"><div class="knob"></div></div>
+          <span>Geology</span>
+        </div>
+        <div class="toggle-row">
+          <div class="switch on" id="toggle-roads"><div class="knob"></div></div>
+          <span>Roads (US)</span>
+        </div>
+        <div class="toggle-row">
+          <div class="switch on" id="toggle-parks"><div class="knob"></div></div>
+          <span>Parks</span>
+        </div>
+        <div class="toggle-row">
+          <div class="switch on" id="toggle-cities"><div class="knob"></div></div>
+          <span>Cities</span>
+        </div>
+        <div class="toggle-row">
+          <div class="switch on" id="toggle-reflines"><div class="knob"></div></div>
+          <span>Equator &amp; circles</span>
+        </div>
+        <div class="toggle-row">
+          <div class="switch on" id="toggle-daynight"><div class="knob"></div></div>
+          <span>Day / night</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel collapsible" id="stats-panel">
+      <div class="panel-header" data-target="stats-body">
+        <label>My stats</label>
+        <span class="collapse-arrow">▾</span>
+      </div>
+      <div class="panel-body" id="stats-body">
+        <div class="stats-line"><span id="stats-count">0</span> of 195 countries</div>
+        <div class="stats-line stats-pct-line"><span id="stats-pct">0%</span> of the world</div>
+      </div>
     </div>
   </div>
 
@@ -711,6 +775,9 @@ const stateLabelsG = document.getElementById('state-labels-g');
 const cityTier2G = document.getElementById('city-tier2-g');
 const cityTier3G = document.getElementById('city-tier3-g');
 const pinsG = document.getElementById('pins-g');
+const reflinesG = document.getElementById('reflines-g');
+const nightPathEl = document.getElementById('night-path');
+const routesG = document.getElementById('routes-g');
 
 const projection = d3.geoOrthographic().clipAngle(90).precision(0.3);
 const pathGen = d3.geoPath(projection);
@@ -804,10 +871,77 @@ function declutter(tier, scale){
   }
 }
 
+/* Reference lines — Equator, Tropics, Polar Circles, Prime Meridian */
+function latCircleGeo(lat){
+  const coords = [];
+  for (let lon=-180; lon<=180; lon+=4) coords.push([lon, lat]);
+  return { type:'LineString', coordinates:coords };
+}
+function meridianGeo(lon){
+  const coords = [];
+  for (let lat=-90; lat<=90; lat+=4) coords.push([lon, lat]);
+  return { type:'LineString', coordinates:coords };
+}
+const REFERENCE_LINES = [
+  { n:'Equator', geo: latCircleGeo(0), cls:'refline-equator', labelLon:-60, labelLat:0 },
+  { n:'Tropic of Cancer', geo: latCircleGeo(23.436), cls:'refline-tropic', labelLon:-60, labelLat:23.436 },
+  { n:'Tropic of Capricorn', geo: latCircleGeo(-23.436), cls:'refline-tropic', labelLon:-60, labelLat:-23.436 },
+  { n:'Arctic Circle', geo: latCircleGeo(66.564), cls:'refline-polar', labelLon:-60, labelLat:66.564 },
+  { n:'Antarctic Circle', geo: latCircleGeo(-66.564), cls:'refline-polar', labelLon:-60, labelLat:-66.564 },
+  { n:'Prime Meridian', geo: meridianGeo(0), cls:'refline-meridian', labelLon:0.3, labelLat:8 },
+];
+const reflinePathEls = REFERENCE_LINES.map(r=>{
+  const p = document.createElementNS(svgNS,'path');
+  p.setAttribute('class', r.cls);
+  reflinesG.appendChild(p);
+  return { p, geo:r.geo };
+});
+const reflineLabelEls = REFERENCE_LINES.map(r=>{
+  const g = document.createElementNS(svgNS,'g');
+  const t = document.createElementNS(svgNS,'text');
+  t.setAttribute('text-anchor','middle');
+  t.setAttribute('font-size', 7.5);
+  t.setAttribute('class','refline-label');
+  t.textContent = r.n;
+  g.appendChild(t);
+  reflinesG.appendChild(g);
+  regLabel(t, r.labelLon, r.labelLat, 0, 0, 0.3, 1, r.n, 7.5);
+  return { g, lon:r.labelLon, lat:r.labelLat };
+});
+
+/* Day/night terminator — real solar position, recomputed once a minute */
+function solarSubpoint(date){
+  const rad = Math.PI/180;
+  const J2000 = Date.UTC(2000,0,1,12,0,0);
+  const d = (date.getTime() - J2000) / 86400000;
+  const meanLong = (280.460 + 0.9856474*d) % 360;
+  const meanAnom = (357.528 + 0.9856003*d) % 360;
+  const eclLong = meanLong + 1.915*Math.sin(meanAnom*rad) + 0.020*Math.sin(2*meanAnom*rad);
+  const oblq = 23.439 - 0.0000004*d;
+  const eclLongRad = eclLong*rad, oblqRad = oblq*rad;
+  const ra = Math.atan2(Math.cos(oblqRad)*Math.sin(eclLongRad), Math.cos(eclLongRad)) / rad;
+  const decl = Math.asin(Math.sin(oblqRad)*Math.sin(eclLongRad)) / rad;
+  const gmst = (280.46061837 + 360.98564736629*d) % 360;
+  let subLon = ((ra - gmst) % 360 + 540) % 360 - 180;
+  return { lon: subLon, lat: decl };
+}
+let nightFeature = null;
+function updateNightFeature(){
+  const sun = solarSubpoint(new Date());
+  let antiLon = sun.lon + 180;
+  antiLon = ((antiLon + 180) % 360 + 360) % 360 - 180; // normalize to [-180, 180]
+  const antiLat = -sun.lat;
+  nightFeature = d3.geoCircle().center([antiLon, antiLat]).radius(90).precision(2)();
+}
+updateNightFeature();
+setInterval(updateNightFeature, 60000);
+
 function redraw(){
   projection.rotate(rotation).scale(baseScale * zoomFactor);
   spherePathEl.setAttribute('d', pathGen({type:'Sphere'}) || '');
   graticulePathEl.setAttribute('d', pathGen(graticule()) || '');
+  reflinePathEls.forEach(({p, geo})=>{ p.setAttribute('d', pathGen(geo) || ''); });
+  if (nightFeature) nightPathEl.setAttribute('d', pathGen(nightFeature) || '');
 
   const tier = updateZoomTier();
   cartoucheEl.classList.toggle('shifted', tier >= 2);
@@ -840,6 +974,7 @@ function redraw(){
   roadPathEls.forEach(({p, geo})=>{ p.setAttribute('d', pathGen(geo) || ''); });
   placeGroup(roadLabelEls, mScale);
   placeGroup(stateLabelEls, mScale);
+  placeGroup(reflineLabelEls, mScale);
   declutter(tier, mScale);
   renderPins();
 }
@@ -1320,14 +1455,16 @@ const layerGroups = {
   roads: [roadsG],
   parks: [landmarksG],
   cities: [cityTier1G, cityTier2G, cityTier3G],
+  reflines: [reflinesG],
+  daynight: [nightPathEl],
 };
-const layerState = { geology: true, roads: true, parks: true, cities: true };
+const layerState = { geology: true, roads: true, parks: true, cities: true, reflines: true, daynight: true };
 function applyLayerToggle(key){
   const on = layerState[key];
   layerGroups[key].forEach(g=>{ g.style.display = on ? '' : 'none'; });
 }
 Object.keys(layerGroups).forEach(applyLayerToggle);
-['geology','roads','parks','cities'].forEach(key=>{
+['geology','roads','parks','cities','reflines','daynight'].forEach(key=>{
   const el = document.getElementById('toggle-'+key);
   el.addEventListener('click', ()=>{
     layerState[key] = !layerState[key];
@@ -1335,6 +1472,16 @@ Object.keys(layerGroups).forEach(applyLayerToggle);
     applyLayerToggle(key);
   });
 });
+
+/* =====================================================================
+   Collapsible panels (Map layers, My stats)
+===================================================================== */
+document.querySelectorAll('.panel-header').forEach(header=>{
+  header.addEventListener('click', ()=>{
+    header.closest('.panel').classList.toggle('collapsed');
+  });
+});
+
 
 /* =====================================================================
    Pins: data + Supabase sync
@@ -1395,6 +1542,49 @@ function renderPins(){
     gPos.addEventListener('click', (ev)=>{ ev.stopPropagation(); openViewPinCard(p, ev.clientX, ev.clientY); });
     pinsG.appendChild(gPos);
   });
+  renderRoutes();
+  updateStats();
+}
+
+/* Great-circle routes between your own pins, in the order you dropped them */
+function renderRoutes(){
+  routesG.innerHTML = "";
+  const me = travInput.value.trim().toLowerCase();
+  if (!me) return;
+  const minePins = allPins.filter(p => (p.traveler||"").trim().toLowerCase() === me);
+  for (let i=0; i<minePins.length-1; i++){
+    const a = [minePins[i].lng, minePins[i].lat];
+    const b = [minePins[i+1].lng, minePins[i+1].lat];
+    const interpolate = d3.geoInterpolate(a, b);
+    const coords = [];
+    for (let s=0; s<=64; s++) coords.push(interpolate(s/64));
+    const p = document.createElementNS(svgNS,'path');
+    p.setAttribute('class','route-line');
+    p.setAttribute('d', pathGen({ type:'LineString', coordinates:coords }) || '');
+    routesG.appendChild(p);
+  }
+}
+
+/* Stats readout — countries visited, computed via point-in-polygon against
+   the real country geometry (not just our curated label subset). */
+const WORLD_COUNTRY_COUNT = 195;
+function updateStats(){
+  const me = travInput.value.trim().toLowerCase();
+  const statsCountEl = document.getElementById('stats-count');
+  const statsPctEl = document.getElementById('stats-pct');
+  if (!me){ statsCountEl.textContent = '0'; statsPctEl.textContent = '0%'; return; }
+  const minePins = allPins.filter(p => (p.traveler||"").trim().toLowerCase() === me);
+  const visited = new Set();
+  minePins.forEach(p=>{
+    for (const f of geoLow.features){
+      if (d3.geoContains(f, [p.lng, p.lat])){
+        visited.add(f.properties.name);
+        break;
+      }
+    }
+  });
+  statsCountEl.textContent = visited.size;
+  statsPctEl.textContent = Math.round((visited.size / WORLD_COUNTRY_COUNT) * 100) + '%';
 }
 
 /* =====================================================================
