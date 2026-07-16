@@ -576,8 +576,6 @@
       <g id="layer-low-g"></g>
       <g id="layer-high-g" style="display:none"></g>
       <path id="states-path" class="state-outline"></path>
-      <g id="labels-g"></g>
-      <g id="country-labels-g"></g>
       <g id="city-tier3-g"></g>
       <g id="city-tier2-g"></g>
       <g id="landmarks-g"></g>
@@ -590,6 +588,8 @@
       <g id="waterfalls-g"></g>
       <g id="roads-g"></g>
       <g id="mountains-g"></g>
+      <g id="labels-g"></g>
+      <g id="country-labels-g"></g>
       <g id="state-labels-g"></g>
       <g id="city-tier1-g"></g>
       <path id="night-path" class="night-shade"></path>
@@ -721,7 +721,7 @@ const MOUNTAIN_RANGES = [{"n": "Rocky Mountains", "pts": [[-114, 51], [-110, 45]
 const OCEAN_LABELS = [["PACIFIC OCEAN", -150, 0], ["ATLANTIC OCEAN", -30, 10], ["INDIAN OCEAN", 75, -25], ["ARCTIC OCEAN", 0, 82], ["SOUTHERN OCEAN", 0, -63]];
 const DESERTS = [{"n": "Sahara Desert", "lon": 15, "lat": 23}, {"n": "Arabian Desert", "lon": 45, "lat": 22}, {"n": "Gobi Desert", "lon": 103, "lat": 43}, {"n": "Kalahari Desert", "lon": 22, "lat": -24}, {"n": "Namib Desert", "lon": 13, "lat": -24}, {"n": "Atacama Desert", "lon": -69, "lat": -24}, {"n": "Mojave Desert", "lon": -116, "lat": 35}, {"n": "Sonoran Desert", "lon": -112, "lat": 32}, {"n": "Chihuahuan Desert", "lon": -104, "lat": 29}, {"n": "Great Victoria Desert", "lon": 127, "lat": -29}, {"n": "Simpson Desert", "lon": 137, "lat": -25}, {"n": "Thar Desert", "lon": 71, "lat": 27}, {"n": "Karakum Desert", "lon": 60, "lat": 39}, {"n": "Taklamakan Desert", "lon": 82, "lat": 39}, {"n": "Patagonian Desert", "lon": -69, "lat": -44}];
 const VOLCANOES = [{"n": "Kilauea", "lon": -155.29, "lat": 19.42}, {"n": "Mount St. Helens", "lon": -122.18, "lat": 46.2}, {"n": "Mount Vesuvius", "lon": 14.43, "lat": 40.82}, {"n": "Mount Etna", "lon": 15.0, "lat": 37.75}, {"n": "Krakatoa", "lon": 105.42, "lat": -6.1}, {"n": "Cotopaxi", "lon": -78.44, "lat": -0.68}, {"n": "Popocat\u00e9petl", "lon": -98.62, "lat": 19.02}, {"n": "Mauna Loa", "lon": -155.6, "lat": 19.48}, {"n": "Stromboli", "lon": 15.21, "lat": 38.79}, {"n": "Villarrica", "lon": -71.93, "lat": -39.42}, {"n": "Ol Doinyo Lengai", "lon": 35.91, "lat": -2.76}, {"n": "Mount Erebus", "lon": 167.17, "lat": -77.53}];
-const LAKES = [{"n": "Caspian Sea", "lon": 50.5, "lat": 41.8}, {"n": "Lake Victoria", "lon": 33.0, "lat": -1.0}, {"n": "Great Lakes", "lon": -84.5, "lat": 45.0}, {"n": "Lake Titicaca", "lon": -69.3, "lat": -15.9}, {"n": "Lake Tanganyika", "lon": 29.6, "lat": -6.5}, {"n": "Great Salt Lake", "lon": -112.6, "lat": 41.2}, {"n": "Aral Sea", "lon": 60.0, "lat": 45.0}, {"n": "Lake Malawi", "lon": 34.5, "lat": -12.0}, {"n": "Lake Chad", "lon": 14.0, "lat": 13.0}, {"n": "Lake Eyre", "lon": 137.4, "lat": -28.7}];
+const LAKES = [{"n": "Caspian Sea", "lon": 50.5, "lat": 41.8}, {"n": "Lake Victoria", "lon": 33.0, "lat": -1.0}, {"n": "Lake Titicaca", "lon": -69.3, "lat": -15.9}, {"n": "Lake Tanganyika", "lon": 29.6, "lat": -6.5}, {"n": "Great Salt Lake", "lon": -112.6, "lat": 41.2}, {"n": "Aral Sea", "lon": 60.0, "lat": 45.0}, {"n": "Lake Malawi", "lon": 34.5, "lat": -12.0}, {"n": "Lake Chad", "lon": 14.0, "lat": 13.0}, {"n": "Lake Eyre", "lon": 137.4, "lat": -28.7}, {"n": "Lake Superior", "lon": -87.5, "lat": 47.7}, {"n": "Lake Michigan", "lon": -87.0, "lat": 44.0}, {"n": "Lake Huron", "lon": -82.4, "lat": 44.8}, {"n": "Lake Erie", "lon": -81.2, "lat": 42.2}, {"n": "Lake Ontario", "lon": -77.5, "lat": 43.7}];
 
 const FORESTS = [{"n": "Amazon Rainforest", "lon": -62, "lat": -5}, {"n": "Congo Rainforest", "lon": 22, "lat": 0}, {"n": "Siberian Taiga", "lon": 100, "lat": 62}, {"n": "Canadian Boreal Forest", "lon": -100, "lat": 56}, {"n": "Black Forest", "lon": 8.2, "lat": 48.1}, {"n": "Daintree Rainforest", "lon": 145.4, "lat": -16.25}, {"n": "Sundarbans", "lon": 89.1, "lat": 21.9}, {"n": "Valdivian Rainforest", "lon": -72.5, "lat": -40.5}, {"n": "Bia\u0142owie\u017ca Forest", "lon": 23.85, "lat": 52.7}];
 const REEFS = [{"n": "Great Barrier Reef", "lon": 147.7, "lat": -18.29}, {"n": "Belize Barrier Reef", "lon": -87.8, "lat": 17.2}, {"n": "Red Sea Coral Reef", "lon": 38.0, "lat": 22.0}, {"n": "New Caledonia Reef", "lon": 165.6, "lat": -21.3}, {"n": "Florida Reef", "lon": -80.3, "lat": 24.8}, {"n": "Ningaloo Reef", "lon": 113.7, "lat": -22.7}, {"n": "Andros Barrier Reef", "lon": -77.9, "lat": 24.4}];
