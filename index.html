@@ -603,7 +603,7 @@
   <div id="controls">
     <div class="panel">
       <label for="travname">Traveler name</label>
-      <input type="text" id="travname" placeholder="e.g. Caro :)" maxlength="24">
+      <input type="text" id="travname" placeholder="e.g. Caro" maxlength="24">
       <div class="toggle-row">
         <div class="switch" id="showtoggle"><div class="knob"></div></div>
         <span id="showtoggle-label">Showing: everyone</span>
@@ -1552,15 +1552,26 @@ async function deletePin(id){
   renderPins();
 }
 async function updatePin(id, updates){
+  const existing = allPins.find(p => p.id === id);
+  if (!existing) return;
   if(!supabaseClient){
     allPins = allPins.map(p => p.id===id ? { ...p, ...updates } : p);
     localStorage.setItem('travelmap_local_pins', JSON.stringify(allPins));
     renderPins();
     return;
   }
-  const { error } = await supabaseClient.from('pins').update(updates).eq('id', id);
-  if(error){ alert('Could not update pin: '+error.message); return; }
-  allPins = allPins.map(p => p.id===id ? { ...p, ...updates } : p);
+  // Uses delete+insert rather than a true UPDATE — the pins table only has
+  // RLS policies for select/insert/delete, not update, so this avoids
+  // needing any database changes on your end.
+  const merged = { ...existing, ...updates };
+  delete merged.id;
+  delete merged.created_at;
+  const { error: delErr } = await supabaseClient.from('pins').delete().eq('id', id);
+  if(delErr){ alert('Could not update pin: '+delErr.message); return; }
+  const { data, error: insErr } = await supabaseClient.from('pins').insert(merged).select();
+  if(insErr){ alert('Could not update pin: '+insErr.message); return; }
+  allPins = allPins.filter(p => p.id !== id);
+  allPins.push(data[0]);
   renderPins();
 }
 
